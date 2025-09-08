@@ -1,14 +1,11 @@
 #include "disk.h"
+#include "fat.h"
 #include "shell.h"
 #include <stdio.h>
 #include <unistd.h>
 
-#define BLOCK_SIZE 4096 // 4 KB = 4096 bytes
-#define DISK_SIZE 1024 * 1024 * 32 // 32 MB = 32 * 1024 * 1024 bytes
-#define NUM_BLOCKS (DISK_SIZE / BLOCK_SIZE) // 8192
-#define FILENAME "disk_image.img"
-
 int main() {
+    /*
     Disk disk;
 
     //we create a disk
@@ -56,7 +53,8 @@ int main() {
     //we close the disk
     disk_close(&disk);
     printf("MAIN: Disk image closed successfully.\n");
-
+    */
+    //
     shell_init();
 
     return 0;

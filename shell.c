@@ -17,24 +17,18 @@ The shell will show a command prompt and allow the user to enter commands. The c
 
 #include "shell.h"
 
-int is_command_available(const char *command, char *available_commands[]) {
-    for (int i = 0; available_commands[i] != NULL; i++) {
-        if (strcmp(command, available_commands[i]) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
+#define MAX_TOKENS 3
+#define MAX_COMMAND_LENGTH 128
+
 
 void shell_init() {
     //start shell
-    while (1) {
-        char* command = malloc(MAX_COMMAND_LENGTH);
-        if (!command) {
-            perror("Failed to allocate memory");
-            exit(EXIT_FAILURE);
-        }
 
+    printf("\n");
+    printf("Welcome to FS Shell!\n");
+
+    while (1) {
+        /*
         //show commands
         printf("\n");
         printf("----------------------\n");
@@ -52,60 +46,154 @@ void shell_init() {
         printf("\n");
         printf("----------------------\n");
         printf("\n");
-
+        
+        */
+        printf("\n");
+        printf("type 'help' for a list of commands\n");
+        printf("----------------------\n");
         printf("SHELL> ");
 
+        char command[MAX_COMMAND_LENGTH];
+
         fgets(command, MAX_COMMAND_LENGTH, stdin);
-        
-        if (strcmp(command, "exit") == 0) {
+
+        //remove newline character
+        command[strcspn(command, "\n")] = 0;
+
+        if (strlen(command) == 0) {
+            printf("Invalid input: no command entered\n");
+            continue;
+        }
+
+        //tokenize command
+
+        char* tokens[MAX_TOKENS];
+
+        char* token = strtok(command, " \t");
+        int i = 0;
+
+        while (token != NULL && i < MAX_TOKENS) {
+            tokens[i++] = token;
+            // debug: printf("Token %d: %s\n", i, tokens[i - 1]);
+            token = strtok(NULL, " \t");
+        }
+
+        //stop if too many tokens are present
+
+        if (token != NULL) {
+            printf("Error: too many arguments. Maximum is %d\n", MAX_TOKENS);
+            continue;
+        }
+
+        tokens[i] = NULL;  // terminator
+        char* comm = tokens[0];
+        //switch case for first command
+
+        if(strncmp(comm, "help", 4) == 0) {
+            printf("Available commands:\n");
+            printf(" - format <fs_filename> <size>\n");
+            printf(" - mkdir <dir_name>\n");
+            printf(" - cd <dir_name>\n");
+            printf(" - touch <file_name>\n");
+            printf(" - cat <file_name>\n");
+            printf(" - ls\n");
+            printf(" - append <file> <text>\n");
+            printf(" - rm <dir/file>\n");
+            printf(" - close\n");
+            continue;
+        }
+        else if(strncmp(comm, "close", 5) == 0) {
+            printf("Exiting shell...\n");
             break;
         }
-
-        char *available_commands[] = {
-            "format",
-            "mkdir",
-            "cd",
-            "touch",
-            "cat",
-            "ls",
-            "append",
-            "rm",
-            "close"
-        };
-
-        if (is_command_available(command, available_commands)) {
-
-            if (strcmp(command, "format") == 0) {
-                //format
-                printf("Formatting disk...\n");
-                continue;
-            } else if (strcmp(command, "mkdir") == 0) {
-                //mkdir
-                printf("Creating directory...\n");
-                continue;
-            } else if (strcmp(command, "cd") == 0) {
-                //cd
-                printf("Changing directory...\n");
-                continue;
-            } else if (strcmp(command, "touch") == 0) {
-                //touch
-                printf("Creating empty file...\n");
-                continue;
-            } else if (strcmp(command, "append") == 0) {
-                //append
-                printf("Appending to file...\n");
-                continue;
-            } else if (strcmp(command, "rm") == 0) {
-                //rm
-                printf("Removing file...\n");
-                continue;
-            } else if (strcmp(command, "ls") == 0) {
-                //ls
-                printf("Listing files...\n");
+        else if(strncmp(comm, "format", 6) == 0) {
+            //format
+            //check if name and size are provided
+            if (tokens[1] == NULL || tokens[2] == NULL) {
+                printf("Error: missing arguments\n");
                 continue;
             }
-
+            char* fs_filename = tokens[1];
+            int size = atoi(tokens[2]);
+            printf("Formatting disk...\n");
+            printf("Filename: %s, Size: %d\n", fs_filename, size);
+            continue;
         }
+        else if(strncmp(comm, "mkdir", 6) == 0) {
+            //mkdir
+            //check if name is provided
+            if (tokens[1] == NULL) {
+                printf("Error: missing arguments\n");
+                continue;
+            }
+            char* dir_name = tokens[1];
+            printf("Creating directory...\n");
+            printf("Created directory: %s\n", dir_name);
+            continue;
+        }
+        else if(strncmp(comm, "cd", 2) == 0) {
+            //cd
+            printf("Changing directory...\n");
+            continue;
+        }
+        else if(strncmp(comm, "touch", 5) == 0) {
+            //touch
+            //check if name is provided
+            if (tokens[1] == NULL) {
+                printf("Error: missing arguments\n");
+                continue;
+            }
+            char* file_name = tokens[1];
+            printf("Creating empty file...\n");
+            printf("Created empty file: %s\n", file_name);
+            continue;
+        }
+        else if(strncmp(comm, "append", 6) == 0) {
+            //append
+            //check if name and text are provided
+            if (tokens[1] == NULL || tokens[2] == NULL) {
+                printf("Error: missing arguments\n");
+                continue;
+            }
+            char* file_name = tokens[1];
+            char* text = tokens[2];
+            printf("Appending to file: %s\n", file_name);
+            printf("Text to append: %s\n", text);
+            continue;
+        }
+        else if(strncmp(comm, "rm", 2) == 0) {
+            //rm
+            //check if name is provided
+            if (tokens[1] == NULL) {
+                printf("Error: missing arguments\n");
+                continue;
+            }
+            char* file_name = tokens[1];
+            printf("Removing file: %s\n", file_name);
+            continue;
+        }
+        else if(strncmp(comm, "ls", 2) == 0) {
+            //ls
+            printf("Listing files...\n");
+            continue;
+        }
+            else if(strncmp(comm, "cat", 3) == 0) {
+                //cat
+                //check if name is provided
+                if (tokens[1] == NULL) {
+                    printf("Error: missing arguments\n");
+                    continue;
+                }
+                char* file_name = tokens[1];
+                printf("Displaying content of file: %s\n", file_name);
+                continue;
+            }
+        else {
+            printf("Unknown command: %s\n", tokens[0]);
+            continue;
+        }
+
+        
     }
     printf("shell closed\n");
 }

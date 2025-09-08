@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#define MAX_COMMAND_LENGTH 32
+#include <stdlib.h>
 
 void shell_init();

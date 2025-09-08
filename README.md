@@ -1,5 +1,4 @@
-This is a simple Shell + File System implementation project. It's written in C language and it'spart of the Operating System Course for Software Engineering bachelor degree at Sapienza University of Rome. The course is taught by professor Giorgio Grisetti.
+This is a simple Shell + File System implementation project. It's written in C language and it's part of the Operating Systems Course for Software Engineering bachelor degree at Sapienza University of Rome. The course is taught by professor Giorgio Grisetti.
 The file system is written on a large file ("disk"), which is opened, truncated and mapped into memory.
-The file allocation is implemented through a linked list.
-Directories are linear lists of files. The hierarchy is preserved thanks to a tree structure.
-The free space is managed through a linked list, where every bit corresponds to a specific free block.
+Each block index is stored in a File Allocation Table (FAT), which acts as a linked list for the blocks that make up a file. The FAT keeps track of which blocks are free, which are in use, and the order of blocks for each file. When a file is created or extended, the FAT is updated to reflect the allocation of new blocks. To read or write a file, the system follows the chain of block indices in the FAT, allowing efficient traversal and management of file data.
+Each file entry can be a file or a directory. If it's a file, it contains the File Control Block. If it's a drectory, it contains a list of entries.

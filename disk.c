@@ -146,6 +146,27 @@ void* disk_read(const Disk* d, uint32_t blkno){
     return out_buf;
 }
 
+void* disk_read_blocks(const Disk* d, uint32_t blkno, uint32_t blocks){
+    void* buf = malloc(blocks * d->block_size);
+    if(!buf) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    for(uint32_t i = 0; i < blocks; i++) {
+        //we use the smaller disk_read for single blocks
+        void* piece = disk_read(d, blkno + i);
+        if(!piece) {
+            perror("Failed to read block");
+            exit(EXIT_FAILURE);
+        }
+        //we add piece to buf
+        memcpy((uint8_t*)buf + i * d->block_size, piece, d->block_size);
+        free(piece);
+    }
+    printf("DISK: disk_read completed successfully\n");
+    return buf;
+}
+
 void disk_write(const Disk* d, uint32_t blkno, const void* in_buf){
 
     if(!d){
@@ -170,6 +191,25 @@ void disk_write(const Disk* d, uint32_t blkno, const void* in_buf){
     }
     memcpy(d->base + offset, in_buf, d->block_size);
     printf("DISK: disk_write completed successfully\n");
+}
+
+void disk_write_blocks(const Disk* d, uint32_t blkno, const void* in_buf, uint32_t blocks) {
+    if(!d) {
+        perror("Invalid disk");
+        exit(EXIT_FAILURE);
+    }
+
+    if(!in_buf) {
+        perror("Invalid buffer");
+        exit(EXIT_FAILURE);
+    }
+
+    for(uint32_t i = 0; i < blocks; i++) {
+        const void* piece = (const uint8_t*)in_buf + i * d->block_size;
+        disk_write(d, blkno + i, piece);
+    }
+
+    printf("DISK: disk_write of %u blocks starting at %u completed successfully\n", blocks, blkno);
 }
 
 //close disk
