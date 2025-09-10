@@ -5,8 +5,9 @@ Here we implement the disk API functions.
 #include "disk.h"
 
 //Initialize disk
-int  disk_init(Disk* d, const char* path, size_t disk_size, uint32_t block_size){
-    if(d == NULL || path == NULL) {
+Disk* disk_init(const char* path, size_t disk_size, uint32_t block_size){
+    printf("DISK: Initializing disk...\n");
+    if(path == NULL) {
         perror("Invalid input");
         exit(EXIT_FAILURE);
     }
@@ -18,6 +19,15 @@ int  disk_init(Disk* d, const char* path, size_t disk_size, uint32_t block_size)
         perror("Invalid number of blocks: too many");
         exit(EXIT_FAILURE);
     }
+    Disk* d = malloc(sizeof(Disk));
+    if(d == NULL){
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    d->fd = -1;
+    d->base = NULL;
+    d->disk_size = disk_size;
+    d->block_size = block_size;
     d->nblocks = (uint32_t)(disk_size / block_size);
     
     //open file
@@ -34,9 +44,11 @@ int  disk_init(Disk* d, const char* path, size_t disk_size, uint32_t block_size)
     }
     //save info
     d->fd = fd;
+    /*
     d->disk_size = disk_size;
     d->block_size = block_size;
     d->nblocks = (uint32_t)(disk_size / block_size);
+    */
 
     //map file into memory
     d->base = mmap(NULL, disk_size, PROT_READ | PROT_WRITE, MAP_SHARED, d->fd, 0);
@@ -50,11 +62,11 @@ int  disk_init(Disk* d, const char* path, size_t disk_size, uint32_t block_size)
 
     d->base = (uint8_t*) d->base;
     printf("DISK: function disk_init completed successfully\n");
-    return 0;
+    return d;
 }
 
 //open disk if it exists
-int disk_open(Disk* d, const char* path) {
+void disk_open(Disk* d, const char* path) {
     if(d == NULL){
         perror("Invalid disk");
         exit(EXIT_FAILURE); // Invalid input
@@ -112,13 +124,16 @@ int disk_open(Disk* d, const char* path) {
     d->block_size = d->block_size;
     d->nblocks = d->nblocks;
 
-    printf("DISK: function disk_open completed successfully\n");
-    return 0;
+    printf("MAIN: Disk size: %lu bytes\n", d->disk_size);
+    printf("MAIN: Block size: %u bytes\n", d->block_size);
+    printf("MAIN: Number of blocks: %u\n", d->nblocks);
 }
 
-bool offset_is_legal(size_t offset, size_t disk_size, uint32_t block_size){
-    return (offset + block_size < disk_size);
+static inline int offset_is_legal(size_t offset, size_t disk_size, size_t block_size) {
+    // evita overflow e verifica che l'intero blocco ci stia
+    return offset <= disk_size && block_size <= disk_size - offset;
 }
+
 
 void* disk_read(const Disk* d, uint32_t blkno){
     void* out_buf = NULL;
@@ -194,26 +209,34 @@ void disk_write(const Disk* d, uint32_t blkno, const void* in_buf){
 }
 
 void disk_write_blocks(const Disk* d, uint32_t blkno, const void* in_buf, uint32_t blocks) {
-    if(!d) {
-        perror("Invalid disk");
+    if (!d) { perror("Invalid disk"); exit(EXIT_FAILURE); }
+    if (!in_buf) { perror("Invalid buffer"); exit(EXIT_FAILURE); }
+    if (blocks == 0) return;
+
+    // check overflow
+    if (blkno >= d->nblocks || blocks > d->nblocks - blkno) {
+        perror("Write range out of disk");
         exit(EXIT_FAILURE);
     }
 
-    if(!in_buf) {
-        perror("Invalid buffer");
+    const uint8_t* p = (const uint8_t*)in_buf;
+    size_t span = (size_t)blocks * d->block_size;
+
+    // check size
+    size_t start = (size_t)blkno * d->block_size;
+    if (!offset_is_legal(start, d->disk_size, span)) {
+        perror("Write exceeds disk size");
         exit(EXIT_FAILURE);
     }
 
-    for(uint32_t i = 0; i < blocks; i++) {
-        const void* piece = (const uint8_t*)in_buf + i * d->block_size;
-        disk_write(d, blkno + i, piece);
-    }
+    memcpy(d->base + start, p, span);
 
     printf("DISK: disk_write of %u blocks starting at %u completed successfully\n", blocks, blkno);
 }
 
+
 //close disk
-int disk_close(Disk* d) {
+void disk_close(Disk* d) {
     if(!d) {
         perror("Invalid disk");
         exit(EXIT_FAILURE);
@@ -226,5 +249,4 @@ int disk_close(Disk* d) {
     }
 
     printf("DISK: function disk_close completed successfully\n");
-    return 0;
 }

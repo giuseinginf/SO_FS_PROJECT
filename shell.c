@@ -14,8 +14,9 @@ The shell will show a command prompt and allow the user to enter commands. The c
    reads the command, and executes it. The loop will terminate when the user enters the "exit" command.
 
 */
-
+#include "disk.h"
 #include "shell.h"
+#include "fat.h"
 
 #define MAX_TOKENS 3
 #define MAX_COMMAND_LENGTH 128
@@ -28,26 +29,7 @@ void shell_init() {
     printf("Welcome to FS Shell!\n");
 
     while (1) {
-        /*
-        //show commands
-        printf("\n");
-        printf("----------------------\n");
-        printf("\n");
-        printf("Available commands:\n");
-        printf(" - format <fs_filename> <size>\n");
-        printf(" - mkdir <dir_name>\n");
-        printf(" - cd <dir_name>\n");
-        printf(" - touch <file_name>\n");
-        printf(" - cat <file_name>\n");
-        printf(" - ls\n");
-        printf(" - append <file> <text>\n");
-        printf(" - rm <dir/file>\n");
-        printf(" - close\n");
-        printf("\n");
-        printf("----------------------\n");
-        printf("\n");
-        
-        */
+
         printf("\n");
         printf("type 'help' for a list of commands\n");
         printf("----------------------\n");
@@ -115,7 +97,38 @@ void shell_init() {
             }
             char* fs_filename = tokens[1];
             int size = atoi(tokens[2]);
+            //check size: we only allow 16, 32 and 64
+            if (size != 16 && size != 32 && size != 64) {
+                printf("Error: invalid size. Allowed sizes are 16, 32, 64\n");
+                continue;
+            }
             printf("Formatting disk...\n");
+            //format disk
+            Disk* disk = disk_init(fs_filename, size * 1024 * 1024, BLOCK_SIZE);
+            
+            //print disk info
+            printf("SHELL: Disk info:\n");
+            printf("SHELL: Disk size: %lu bytes\n", disk->disk_size);
+            printf("SHELL: Block size: %u bytes\n", disk->block_size);
+            printf("SHELL: Number of blocks: %u\n", disk->nblocks);
+
+            //test diskwrite for one block
+            char* test_data = "Hello, Disk!";
+            disk_write(disk, 0, test_data);
+            //test diskread for one block
+            char* read_data = disk_read(disk, 0);
+            if (read_data) {
+                printf("SHELL: Read data: %s\n", read_data);
+                free(read_data);
+            }
+
+            /*
+            //init FAT
+            FAT* fat = fat_init(FAT_NUM_BLOCKS);
+            */
+            //TODO: write FAT to disk
+            
+            //TODO: add root directory
             printf("Filename: %s, Size: %d\n", fs_filename, size);
             continue;
         }

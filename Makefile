@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
-SRCS=main.c disk.c shell.c
+SRCS=main.c disk.c shell.c fat.c
 OBJ=$(SRCS:.c=.o)
 
 all: myFS

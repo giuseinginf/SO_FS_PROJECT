@@ -1,34 +1,44 @@
 #include "fat.h"
 #include "disk.h"
 
-#define BLOCK_FREE -1
-#define EOF -2
+#define FAT_FREE -1
+#define FAT_EOC -2
 
-void fat_init(FAT *fat, uint32_t size){
-    fat->num_blocks = FAT_SIZE / BLOCK_SIZE; // 1 MB / 4 KB = 256
-    fat->block_size = BLOCK_SIZE;
-    for (int i = 0; i < MAX_FILES; i++) {
-        for (int j = 0; j < MAX_FILE_BLOCKS; j++) {
-            fat->files[i].indexes[j] = BLOCK_FREE;
-        }
-    }
-    printf("FAT: function fat_init completed successfully\n");
-}
-
-void* fat_read(Disk *d, FAT *fat) {
-    //compute index
-    void* buffer = malloc(FAT_SIZE);
-    if(!buffer) {
-        perror("Failed to allocate memory");
-        exit(EXIT_FAILURE);
-    }
+FAT* fat_init(uint32_t num_blocks) {
     
-    disk_read(d, FAT_START_BLOCK, buffer);
-    printf("FAT: function fat_read completed successfully\n");
-    return buffer;
+    FAT* fat;
+
+    for (int i = 0; i < 256; i++) {
+        fat->fat[i] = FAT_FREE;
+    }
+
+    for (int i = 0; i < 16; i++) {
+        fat->files[i].name[0] = '\0';
+        fat->files[i].size = 0;
+        fat->files[i].first_block = FAT_EOC;
+    }
+    printf("FAT: fat_init completed successfully\n");
+    //print fat info
+    printf("FAT: Number of blocks: %u\n", num_blocks);
+    return fat;
+}
+/*
+FAT* fat_read(Disk d) {
+    if (!d.base) return NULL;
+    
+    FAT *fat = malloc(sizeof(FAT));
+    if (!fat) return NULL;
+    
+    memcpy(fat, d.base, sizeof(FAT));
+    return fat;
+    printf("FAT: fat_read completed successfully\n");
 }
 
-void fat_write(Disk *d, FAT *fat) {
-    disk_write(d, FAT_START_BLOCK, fat, FAT_SIZE);
-    printf("FAT: function fat_write completed successfully\n");
+
+void fat_write(Disk d, FAT *fat) {
+    if (!d.base || !fat) return;
+    
+    memcpy(d.base, fat, sizeof(FAT));
+    printf("FAT: fat_write completed successfully\n");
 }
+*/
