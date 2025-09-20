@@ -16,7 +16,6 @@ The shell will show a command prompt and allow the user to enter commands. The c
 */
 #include "disk.h"
 #include "shell.h"
-#include "fat.h"
 
 #define MAX_TOKENS 3
 #define MAX_COMMAND_LENGTH 128
@@ -69,8 +68,7 @@ void shell_init() {
 
         tokens[i] = NULL;  // terminator
         char* comm = tokens[0];
-        //switch case for first command
-
+       
         if(strncmp(comm, "help", 4) == 0) {
             printf("Available commands:\n");
             printf(" - format <fs_filename> <size>\n");
@@ -104,32 +102,21 @@ void shell_init() {
             }
             printf("Formatting disk...\n");
             //format disk
-            Disk* disk = disk_init(fs_filename, size * 1024 * 1024, BLOCK_SIZE);
-            
+            size_t disk_size = size * 1024 * 1024; // size in MB
+            uint32_t block_size = 4096; // 4 KB
+            char* disk = open_and_map_disk(fs_filename, disk_size);
+            if(!disk) {
+                perror("Failed to initialize disk");
+                continue;
+            }
+            printf("SHELL: Disk formatted successfully\n");
+
             //print disk info
             printf("SHELL: Disk info:\n");
-            printf("SHELL: Disk size: %lu bytes\n", disk->disk_size);
-            printf("SHELL: Block size: %u bytes\n", disk->block_size);
-            printf("SHELL: Number of blocks: %u\n", disk->nblocks);
-
-            //test diskwrite for one block
-            char* test_data = "Hello, Disk!";
-            disk_write(disk, 0, test_data);
-            //test diskread for one block
-            char* read_data = disk_read(disk, 0);
-            if (read_data) {
-                printf("SHELL: Read data: %s\n", read_data);
-                free(read_data);
-            }
-
-            /*
-            //init FAT
-            FAT* fat = fat_init(FAT_NUM_BLOCKS);
-            */
-            //TODO: write FAT to disk
-            
-            //TODO: add root directory
-            printf("Filename: %s, Size: %d\n", fs_filename, size);
+            printf("SHELL: Disk name: %s\n", fs_filename);
+            printf("SHELL: Disk size: %lu bytes\n", disk_size);
+            printf("SHELL: Block size: %u bytes\n", block_size);
+            printf("SHELL: Number of blocks: %lu\n", disk_size / block_size);
             continue;
         }
         else if(strncmp(comm, "mkdir", 6) == 0) {
