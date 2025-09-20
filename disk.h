@@ -25,4 +25,10 @@ Here we define the Disk structure and its associated functions.
 
 char* open_and_map_disk(const char* filename, size_t filesize);
 
+uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size);
+
+int read_block(void *disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes);
+
+int write_block(void *disk_mem, uint32_t block_index, const void *buffer, size_t block_size, size_t disk_size_bytes);
+
 void close_and_unmap_disk(char* file_memory, size_t filesize);

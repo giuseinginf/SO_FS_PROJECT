@@ -37,6 +37,23 @@ char* open_and_map_disk(const char* filename, size_t filesize) {
     return file_memory;
 }
 
+uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size) {
+    // Numero totale di blocchi dati dal disco
+    uint32_t num_blocks = disk_size / block_size;
+
+    // Spazio FAT: una entry per ogni blocco, 4 byte per entry
+    size_t fat_bytes = num_blocks * sizeof(uint32_t);
+
+    // Quanti blocchi servono per la FAT (arrotonda per eccesso)
+    uint32_t fat_blocks = (fat_bytes + block_size - 1) / block_size;
+
+    // Metainfo: 1 blocco riservato (puoi aumentare se la struttura cresce)
+    uint32_t meta_blocks = 1;
+
+    // Totale blocchi riservati (metainfo + FAT)
+    return meta_blocks + fat_blocks;
+}
+
 //read block
 int read_block(void *disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes) {
     size_t offset = block_index * block_size;
