@@ -23,6 +23,8 @@ Here we define the Disk structure and its associated functions.
 
 // API
 
+void handle_error(const char* msg);
+
 char* open_and_map_disk(const char* filename, size_t filesize);
 
 uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size);

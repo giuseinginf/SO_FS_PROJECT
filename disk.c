@@ -4,6 +4,11 @@ Here we implement the disk API functions.
 
 #include "disk.h"
 
+void handle_error(const char* msg) {
+    perror(msg);
+    exit(EXIT_FAILURE);
+}
+
 //Initialize disk
 char* open_and_map_disk(const char* filename, size_t filesize) {
     // syscall to open a file
