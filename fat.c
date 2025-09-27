@@ -34,6 +34,12 @@ void printFat(const uint32_t* fat, uint32_t num_entries) {
     }
 }
 
+int update_fat_and_metainfo(void *disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t fat_start_block, DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
+    int res = write_fat(disk_mem, fat, num_fat_entries, fat_start_block, block_size, disk_size_bytes);
+    if (res != 0) return res;
+    return write_metainfo(disk_mem, info, block_size, disk_size_bytes);
+}
+
 int write_fat(void *disk_mem, const uint32_t *fat, uint32_t num_fat_entries, uint32_t start_block, size_t block_size, size_t disk_size_bytes) {
     
     uint32_t fat_bytes = num_fat_entries * sizeof(uint32_t);
@@ -76,16 +82,16 @@ uint32_t get_free_block(const DiskInfo* info) {
 
 int allocateBlock(uint32_t* fat, DiskInfo* info) {
     uint32_t freeListHead = info->free_list_head;
-    if (freeListHead == FAT_EOF) {
-        // No free blocks available
-        return FAT_EOF;
+    uint32_t free_blocks = info->free_blocks;
+    if (free_blocks == 0) {
+        return FAT_EOF; // No free blocks available
     }
     uint32_t allocatedBlock = freeListHead;
     freeListHead = fat[allocatedBlock];  // new free list head
     fat[allocatedBlock] = FAT_EOC;        // Mark block as end of chain
     info->free_list_head = freeListHead;
     info->free_blocks--;
-    return 0;
+    return allocatedBlock;
 }
 
 int appendBlockToChain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
@@ -93,7 +99,7 @@ int appendBlockToChain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
     uint32_t freeListHead = info->free_list_head;
     if (freeListHead == FAT_EOF) {
         // No free blocks available
-        return -1;
+        return FAT_EOF;
     }
     uint32_t newBlock = freeListHead;
     freeListHead = fat[newBlock];
@@ -108,7 +114,7 @@ int appendBlockToChain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
     fat[cur] = newBlock;
     info->free_list_head = freeListHead;
     info->free_blocks--;
-    return 0;
+    return newBlock;
 }
 
 int deallocateChain(uint32_t* fat, DiskInfo* info, uint32_t start) {

@@ -21,9 +21,19 @@ Here we define the Disk structure and its associated functions.
 #define MAX_FILE_BLOCKS 64
 #define MAX_NAME_LEN 32
 
+typedef struct{
+    char name[MAX_NAME_LEN];    // nome file disco
+    size_t disk_size;           // dimensione totale disco in byte
+    size_t block_size;          // dimensione blocco (es: 4096)
+    size_t free_blocks;         // blocchi liberi
+    uint32_t free_list_head;    // indice del primo blocco libero
+} DiskInfo;
+
 // API
 
 void handle_error(const char* msg);
+
+void printDiskInfo(const DiskInfo* info);
 
 char* open_and_map_disk(const char* filename, size_t filesize);
 

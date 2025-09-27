@@ -13,4 +13,4 @@ myFS: $(OBJ)
 
 clean:
 	rm -f myFS $(OBJ)
-	rm -f virtual_disk.img
+	rm -f disk.img

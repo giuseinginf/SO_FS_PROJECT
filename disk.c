@@ -9,6 +9,17 @@ void handle_error(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
+void printDiskInfo(const DiskInfo* info) {
+    printf("\n");
+    printf("Disk Info:\n");
+    printf("Name: %s\n", info->name);
+    printf("Disk Size: %zu bytes\n", info->disk_size);
+    printf("Block Size: %zu bytes\n", info->block_size);
+    printf("Free Blocks: %zu\n", info->free_blocks);
+    printf("Free List Head: %u\n", info->free_list_head);
+    printf("\n");
+}
+
 //Initialize disk
 char* open_and_map_disk(const char* filename, size_t filesize) {
     // syscall to open a file
