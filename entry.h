@@ -20,6 +20,12 @@ void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t 
 
 int write_directory(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes);
 
-int read_directory(void *disk_mem, Entry* dir, size_t block_size, size_t disk_size_bytes);
+Entry* read_directory(void *disk_mem, Entry* dir, size_t block_size, size_t disk_size_bytes);
+
+Entry* read_directory_from_block(void *disk_mem, uint32_t block_index, size_t block_size, size_t disk_size_bytes);
 
 void print_directory(const Entry* dir);
+
+void update_directory_children(Entry* dir, uint32_t child_start_block);
+
+uint32_t* get_children_blocks(const Entry* dir);

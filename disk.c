@@ -9,7 +9,7 @@ void handle_error(const char* msg) {
     exit(EXIT_FAILURE);
 }
 
-void printDiskInfo(const DiskInfo* info) {
+void print_disk_info(const DiskInfo* info) {
     printf("\n");
     printf("Disk Info:\n");
     printf("Name: %s\n", info->name);
@@ -54,24 +54,24 @@ char* open_and_map_disk(const char* filename, size_t filesize) {
 }
 
 uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size) {
-    // Numero totale di blocchi dati dal disco
+    // total Number of data blocks on the disk
     uint32_t num_blocks = disk_size / block_size;
 
-    // Spazio FAT: una entry per ogni blocco, 4 byte per entry
+    // FAT space: one entry for each block, 4 bytes per entry
     size_t fat_bytes = num_blocks * sizeof(uint32_t);
 
-    // Quanti blocchi servono per la FAT (arrotonda per eccesso)
+    // How many blocks are needed for the FAT (round up)
     uint32_t fat_blocks = (fat_bytes + block_size - 1) / block_size;
 
-    // Metainfo: 1 blocco riservato (puoi aumentare se la struttura cresce)
+    // Metainfo: 1 block reserved (can increase if structure grows)
     uint32_t meta_blocks = 1;
 
-    // Totale blocchi riservati (metainfo + FAT)
+    // Total reserved blocks (metainfo + FAT)
     return meta_blocks + fat_blocks;
 }
 
 //read block
-int read_block(void *disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes) {
+int read_block(char* disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes) {
     size_t offset = block_index * block_size;
     // Check that we don't go past the end of the disk
     if (offset + block_size > disk_size_bytes) {
@@ -82,7 +82,7 @@ int read_block(void *disk_mem, uint32_t block_index, void *buffer, size_t block_
 }
 
 //write block
-int write_block(void *disk_mem, uint32_t block_index, const void *buffer, size_t block_size, size_t disk_size_bytes) {
+int write_block(char* disk_mem, uint32_t block_index, const void *buffer, size_t block_size, size_t disk_size_bytes) {
     size_t offset = block_index * block_size;
     if (offset + block_size > disk_size_bytes) {
         return -1; // Error: out of bounds

@@ -296,7 +296,7 @@ void shell_init() {
                 res = read_fat(disk_memory, read_fat_array, num_fat_entries, 1, block_size, disk_size);
                 if (res == 0) {
                     printf("FAT read from disk successfully.\n");
-                    printFat(read_fat_array, 10);
+                    print_fat(read_fat_array, 10);
                 }
                 free(read_fat_array);
             }
