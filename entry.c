@@ -76,6 +76,8 @@ void print_directory(const Entry* dir){
 }
 
 void update_directory_children(Entry* dir, uint32_t child_start_block){
+    //we scan the dir_blocks array for the first 0 entry and we add the new child's start block there
+    if (dir == NULL) return;
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
         if (dir->dir_blocks[i] == 0) {
             dir->dir_blocks[i] = child_start_block;

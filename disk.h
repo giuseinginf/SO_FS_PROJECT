@@ -35,6 +35,8 @@ void handle_error(const char* msg);
 
 void print_disk_info(const DiskInfo* info);
 
+void print_disk_status(char* disk_mem, size_t disk_size_bytes);
+
 char* open_and_map_disk(const char* filename, size_t filesize);
 
 uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size);

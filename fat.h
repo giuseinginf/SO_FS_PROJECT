@@ -17,6 +17,8 @@ void init_fat(uint32_t* fat, uint32_t num_entries);
 
 void print_fat(const uint32_t* fat, uint32_t num_entries);
 
+void load_info_and_fat(char* disk_mem, DiskInfo* info, uint32_t* fat, size_t disk_size);
+
 int update_fat_and_metainfo(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t fat_start_block, DiskInfo *info, size_t block_size, size_t disk_size_bytes);
 
 int write_fat(char* disk_mem, const uint32_t *fat, uint32_t num_fat_entries, uint32_t start_block, size_t block_size, size_t disk_size_bytes);

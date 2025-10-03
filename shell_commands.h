@@ -9,7 +9,7 @@ char* format_disk(const char *filename, size_t size);
 void create_directory(char* disk_mem, const char *name, uint32_t parent_block, size_t disk_size_bytes);
 
 //rmdir
-void remove_directory(const char *name);
+void remove_directory(char* disk_mem, const char *name, uint32_t parent_block, size_t disk_size_bytes);
 
 //ls
 void list_directory_contents();

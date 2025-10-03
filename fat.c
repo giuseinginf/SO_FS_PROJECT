@@ -34,6 +34,21 @@ void print_fat(const uint32_t* fat, uint32_t num_entries) {
     }
 }
 
+void load_info_and_fat(char* disk_mem, DiskInfo* info, uint32_t* fat, size_t disk_size) {
+    //read metainfo
+    //printf("Loading metainfo...\n");
+    int res = read_metainfo(disk_mem, info, BLOCK_SIZE, disk_size);
+    if (res != 0) handle_error("Failed to read metainfo");
+    //print_disk_info(info);
+    //read fat
+    //printf("Loading FAT...\n");
+    uint32_t num_fat_entries = disk_size / BLOCK_SIZE;
+    res = read_fat(disk_mem, fat, num_fat_entries, 1, BLOCK_SIZE, disk_size);
+    if (res != 0) handle_error("Failed to read FAT");
+    //printf("FAT read successfully.\n");
+    //print_fat(fat, 10);
+}
+
 int update_fat_and_metainfo(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t fat_start_block, DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
     int res = write_fat(disk_mem, fat, num_fat_entries, fat_start_block, block_size, disk_size_bytes);
     if (res != 0) return res;
