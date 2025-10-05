@@ -166,7 +166,6 @@ void shell_init() {
             root.type = ENTRY_TYPE_DIR;
             root.size = 1;
             root.current_block = info.free_list_head; // first free block
-            root.next_block = FAT_EOC;
 
             uint32_t root_block = allocateBlock(fat, &info);
             if (root_block == FAT_EOF) {
@@ -254,7 +253,6 @@ void shell_init() {
                 handle_error("Failed to allocate block for new directory");
             }
             new_dir.current_block = dir_block;
-            new_dir.next_block = FAT_EOC;
 
             char dir_buffer[block_size];
             memset(dir_buffer, 0, block_size);

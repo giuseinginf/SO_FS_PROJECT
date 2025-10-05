@@ -15,7 +15,7 @@ void remove_directory(char* disk_mem, const char *name, uint32_t parent_block, s
 void list_directory_contents();
 
 //cd
-void change_directory(const char *path);
+uint32_t change_directory(const char *path, uint32_t cursor, char* disk_mem, size_t disk_size_bytes);
 
 //touch
 void create_file(const char *name);

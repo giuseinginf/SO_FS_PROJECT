@@ -11,13 +11,11 @@ void handle_error(const char* msg) {
 }
 
 void print_disk_info(const DiskInfo* info) {
-    printf("\n");
     printf("Name: %s\n", info->name);
     printf("Disk Size: %zu bytes\n", info->disk_size);
     printf("Block Size: %zu bytes\n", info->block_size);
     printf("Free Blocks: %zu\n", info->free_blocks);
     printf("Free List Head: %u\n", info->free_list_head);
-    printf("\n");
 }
 
 void print_disk_status(char* disk_mem, size_t disk_size_bytes){
@@ -32,6 +30,7 @@ void print_disk_status(char* disk_mem, size_t disk_size_bytes){
     uint32_t fat[num_fat_entries];
     res = read_fat(disk_mem, fat, num_fat_entries, 1, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to read FAT");
+    printf("\n");
     printf("FAT (first 10 entries):\n");
     print_fat(fat, 10);
 }

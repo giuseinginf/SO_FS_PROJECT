@@ -12,8 +12,8 @@ typedef struct {
     uint8_t type;         // ENTRY_TYPE_FILE or ENTRY_TYPE_DIR
     uint32_t size;        // Size of the file (in bytes), for dirs it can be the number of entries
     uint32_t dir_blocks[MAX_DIR_ENTRIES]; // If it's a directory, array of starting blocks of contained files/dirs
+    uint32_t parent_block; // parent directory block, EOF for root
     uint32_t current_block; // starting block
-    uint32_t next_block;  // next block of the entry, FAT_EOC if none
 } Entry;
 
 void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t type);

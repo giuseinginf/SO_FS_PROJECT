@@ -5,8 +5,8 @@ void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t 
     dir->type = type;
     dir->size = 1; // Initially empty
     memset(dir->dir_blocks, 0, sizeof(dir->dir_blocks));
+    dir->parent_block = FAT_EOF; // No parent initially
     dir->current_block = start_block;
-    dir->next_block = FAT_EOC; // No next block initially
 }
 
 int write_directory(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes){
@@ -53,8 +53,8 @@ void print_directory(const Entry* dir){
     printf("Directory: %s\n", dir->name);
     printf("Type: %s\n", dir->type == ENTRY_TYPE_DIR ? "Directory" : "File");
     printf("Size: %u\n", dir->size);
+    printf("Parent Block: %u\n", dir->parent_block);
     printf("Current Block: %u\n", dir->current_block);
-    printf("Next Block: %u\n", dir->next_block);
     if (dir->type == ENTRY_TYPE_DIR) {
         printf("Directory Blocks: ");
         for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
