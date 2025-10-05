@@ -1,6 +1,6 @@
 #include "entry.h"
 
-void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t type){
+void init_entry(Entry* dir, const char* name, uint32_t start_block, uint8_t type){
     strncpy(dir->name, name, MAX_NAME_LEN);
     dir->type = type;
     dir->size = 1; // Initially empty
@@ -9,7 +9,7 @@ void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t 
     dir->current_block = start_block;
 }
 
-int write_directory(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes){
+int write_entry(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes){
     if (disk_mem == NULL || dir == NULL) return -1; // Invalid parameters
     // The entry contains the block where the directory should be written
     uint32_t block_index = dir->current_block;

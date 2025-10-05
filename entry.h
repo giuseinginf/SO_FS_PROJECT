@@ -16,9 +16,9 @@ typedef struct {
     uint32_t current_block; // starting block
 } Entry;
 
-void init_directory(Entry* dir, const char* name, uint32_t start_block, uint8_t type);
+void init_entry(Entry* dir, const char* name, uint32_t start_block, uint8_t type);
 
-int write_directory(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes);
+int write_entry(void *disk_mem, const Entry* dir, size_t block_size, size_t disk_size_bytes);
 
 Entry* read_directory(void *disk_mem, Entry* dir, size_t block_size, size_t disk_size_bytes);
 

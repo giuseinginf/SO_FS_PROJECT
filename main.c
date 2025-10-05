@@ -86,6 +86,18 @@ void test_function() {
     uint32_t another_new_cursor = change_directory("dir1", cursor, disk_memory, disk_size);
     printf("Cursor: %u\n", another_new_cursor);
 
+    //we create a file in dir1
+    create_file(disk_memory, "file1.txt", another_new_cursor, disk_size);
+    //we list dir1 contents
+    printf("\n");
+    list_directory_contents(disk_memory, another_new_cursor, disk_size);
+    printf("\n");
+
+    //we remove the file
+    remove_file(disk_memory, "file1.txt", another_new_cursor, disk_size);
+    //we list dir1 contents again
+    printf("\n");
+    list_directory_contents(disk_memory, another_new_cursor, disk_size);
     printf("\n");
 
     /*
