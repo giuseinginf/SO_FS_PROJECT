@@ -115,8 +115,8 @@ void test_function() {
 
 }
 int main() {
-    test_function();
-    //shell_init();
+    //test_function();
+    shell_init();
 
     return 0;
 }

@@ -30,7 +30,16 @@ void init_fat(uint32_t* fat, uint32_t num_entries) {
 
 void print_fat(const uint32_t* fat, uint32_t num_entries) {
     for (uint32_t i = 0; i < num_entries; i++) {
-        printf("FAT[%u] = %u\n", i, fat[i]);
+        //if we read EOF, we print EOF instead of the number
+        if (fat[i] == FAT_EOF) {
+            printf("FAT[%u] = EOF\n", i);
+            continue;
+        }
+        if (fat[i] == FAT_EOC) {
+            printf("FAT[%u] = EOC\n", i);
+            continue;
+        }
+        else printf("FAT[%u] = %u\n", i, fat[i]);
     }
 }
 

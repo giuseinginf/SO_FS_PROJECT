@@ -5,11 +5,13 @@ Here we implement the disk API functions.
 #include "disk.h"
 #include "fat.h"
 
+// Error handling function
 void handle_error(const char* msg) {
     perror(msg);
     exit(EXIT_FAILURE);
 }
 
+// Print disk information
 void print_disk_info(const DiskInfo* info) {
     printf("Name: %s\n", info->name);
     printf("Disk Size: %zu bytes\n", info->disk_size);
@@ -18,8 +20,9 @@ void print_disk_info(const DiskInfo* info) {
     printf("Free List Head: %u\n", info->free_list_head);
 }
 
+// Print disk status: metainfo and first 10 FAT entries
 void print_disk_status(char* disk_mem, size_t disk_size_bytes){
-    //now we read metainfo
+    //we read metainfo
     DiskInfo info = {0};
     int res = read_metainfo(disk_mem, &info, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to read metainfo");
@@ -68,6 +71,7 @@ char* open_and_map_disk(const char* filename, size_t filesize) {
     return file_memory;
 }
 
+// Compute how many reserved blocks are needed (metainfo + FAT)
 uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size) {
     // total Number of data blocks on the disk
     uint32_t num_blocks = disk_size / block_size;
@@ -85,7 +89,7 @@ uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size) {
     return meta_blocks + fat_blocks;
 }
 
-//read block
+//read block from the disk to buffer
 int read_block(char* disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes) {
     size_t offset = block_index * block_size;
     // Check that we don't go past the end of the disk
@@ -96,7 +100,7 @@ int read_block(char* disk_mem, uint32_t block_index, void *buffer, size_t block_
     return 0; // Success
 }
 
-//write block
+//write block from buffer to the disk
 int write_block(char* disk_mem, uint32_t block_index, const void *buffer, size_t block_size, size_t disk_size_bytes) {
     size_t offset = block_index * block_size;
     if (offset + block_size > disk_size_bytes) {

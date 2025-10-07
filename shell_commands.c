@@ -3,6 +3,8 @@
 //format
 char* format_disk(const char *filename, size_t size) {
     
+    printf("Formatting disk '%s' with size %zu bytes...\n", filename, size);
+
     bool DISK_EXISTS = false;     // flag to check if a disk is mounted
     char* disk_memory = NULL;         // Memory mapped disk
 
@@ -288,7 +290,7 @@ uint32_t change_directory(const char *path, uint32_t cursor, char* disk_mem, siz
         if (current_dir->parent_block == FAT_EOF) {
             printf("Already at root directory, cannot go up.\n");
             free(current_dir);
-            return FAT_EOF;
+            return cursor;
         }
         Entry* parent_dir = read_directory_from_block(disk_mem, current_dir->parent_block, BLOCK_SIZE, disk_size_bytes);
         if (parent_dir == NULL) handle_error("Failed to read parent directory");

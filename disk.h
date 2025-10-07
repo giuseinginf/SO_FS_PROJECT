@@ -1,7 +1,3 @@
-/*
-Here we define the Disk structure and its associated functions.
-*/
-
 #pragma once
 
 #include <stdint.h>
@@ -22,11 +18,11 @@ Here we define the Disk structure and its associated functions.
 #define MAX_NAME_LEN 32
 
 typedef struct{
-    char name[MAX_NAME_LEN];    // nome file disco
-    size_t disk_size;           // dimensione totale disco in byte
-    size_t block_size;          // dimensione blocco (es: 4096)
-    size_t free_blocks;         // blocchi liberi
-    uint32_t free_list_head;    // indice del primo blocco libero
+    char name[MAX_NAME_LEN];    // disk file name
+    size_t disk_size;           // total disk size in bytes
+    size_t block_size;          // block size (e.g., 4096)
+    size_t free_blocks;         // free blocks
+    uint32_t free_list_head;    // index of the first free block
 } DiskInfo;
 
 // API
