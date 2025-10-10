@@ -10,9 +10,11 @@ void test_function() {
 
     //size_t disk_size = 32 * 1024 * 1024; // 32 MB
     size_t disk_size = 16 * 1024 * 1024; // 64 MB
-    
+
+    //format disk
     char* disk_memory = format_disk(disk_path, disk_size);
     if(disk_memory == NULL) handle_error("Failed to initialize disk");
+    
     printf("Disk initialized successfully.\n");
     
     //read disk status
@@ -26,89 +28,64 @@ void test_function() {
     //uint32_t cursor = root_block;
     //read root directory
     Entry* read_root = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
+    //we check if root directory is valid
     if (read_root == NULL) handle_error("Failed to read root directory");
-    
-    //printf("Root directory read successfully.\n");    
+
+    //printf("Root directory read successfully.\n");
     printf("Root directory:\n");
     print_directory(read_root);
-
     free(read_root);
 
     uint32_t cursor = root_block;
     printf("Cursor at root block: %u\n", cursor);
     printf("\n");
 
-    //create a new directory in root
-    create_directory(disk_memory, "dir1", cursor, disk_size);
-    //we point cursor to dir1
-    //we read root to find dir1's block
-    Entry* root_after_dir1 = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
-    if (root_after_dir1 == NULL) handle_error("Failed to read root directory after creating dir1");
-    uint32_t* children_blocks = get_children_blocks(root_after_dir1);
-    if (children_blocks == NULL) handle_error("Failed to get children blocks of root directory");
-    uint32_t new_cursor = cursor;
-    for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
-        if (children_blocks[i] == 0) break; // No more children
-        Entry* child = read_directory_from_block(disk_memory, children_blocks[i], BLOCK_SIZE, disk_size);
-        if (child == NULL) handle_error("Failed to read child directory");
-        if (strcmp(child->name, "dir1") == 0 && child->type == ENTRY_TYPE_DIR) {
-            new_cursor = child->current_block;
-            printf("New cursor moved to 'dir1' block: %u\n", new_cursor);
-            free(child);
-            break;
-        }
-        free(child);
-    }
-    Entry* dir1 = read_directory_from_block(disk_memory, new_cursor, BLOCK_SIZE, disk_size);
-    if (dir1 == NULL) handle_error("Failed to read directory 'dir1'");
-    printf("Directory 'dir1': \n");
-    print_directory(dir1);
-    free(dir1);
-
-    //we read root again to see if dir1 is there
-    printf("Reading the root again...\n");
-    Entry* read_root_again = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
-    if (read_root_again == NULL) handle_error("Failed to read root directory");
-    print_directory(read_root_again);
-    free(read_root_again);
-    //fat and metainfo should be updated already by create_directory. We can print them again
-    
-    //we read status again
-    print_disk_status(disk_memory, disk_size);
-
-    //we now print with list_directory_contents
+    //we add a new file inside root
+    create_file(disk_memory, "file1.txt", cursor, disk_size);
     printf("\n");
+
+    //we add a new directory inside root
+    create_directory(disk_memory, "dir1", cursor, disk_size);
+    printf("\n");
+
+    //we list the contents of root
+    printf("Contents of root directory after adding file1.txt:\n");
     list_directory_contents(disk_memory, cursor, disk_size);
     printf("\n");
-    //function should have made side effect on cursor
-    //we change directory to dir1
-    printf("Cursor: %u\n", cursor);
-    uint32_t another_new_cursor = change_directory("dir1", cursor, disk_memory, disk_size);
-    printf("Cursor: %u\n", another_new_cursor);
 
-    //we create a file in dir1
-    create_file(disk_memory, "file1.txt", another_new_cursor, disk_size);
-    //we list dir1 contents
-    printf("\n");
-    list_directory_contents(disk_memory, another_new_cursor, disk_size);
+    //we print the updated root directory
+    Entry* updated_root = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
+    if (updated_root == NULL) handle_error("Failed to read updated root directory");
+    printf("Updated root directory after adding file1.txt:\n");
+    print_directory(updated_root);
+    free(updated_root);
     printf("\n");
 
-    //we remove the file
-    remove_file(disk_memory, "file1.txt", another_new_cursor, disk_size);
-    //we list dir1 contents again
-    printf("\n");
-    list_directory_contents(disk_memory, another_new_cursor, disk_size);
+    //we print free list head
+    DiskInfo info;
+    uint32_t num_fat_entries = disk_size / BLOCK_SIZE;
+    uint32_t fat[num_fat_entries];
+    read_info_and_fat(disk_memory, &info, fat, disk_size);
+    print_disk_info(&info);
     printf("\n");
 
-    /*
-    //now we move to dir1 from root
-    //now we read the directory at cursor (should be root)
-    Entry* dir_at_cursor = read_directory_from_block(disk_memory, cursor, BLOCK_SIZE, disk_size);
-    if (dir_at_cursor == NULL) handle_error("Failed to read directory at cursor");
-    printf("Directory at cursor after changing to parent:\n");
-    print_directory(dir_at_cursor);
-    free(dir_at_cursor);
-    */
+    //now we remove the directory we just created
+    remove_directory(disk_memory, "dir1", cursor, disk_size);
+    printf("\n");
+
+    //we list the contents of root again
+    printf("Contents of root directory after removing dir1:\n");
+    list_directory_contents(disk_memory, cursor, disk_size);
+    printf("\n");
+
+    //now we remove the file we created
+    remove_file(disk_memory, "file1.txt", cursor, disk_size);
+    printf("\n");
+
+    //we list the contents of root again
+    printf("Contents of root directory after removing file1.txt:\n");
+    list_directory_contents(disk_memory, cursor, disk_size);
+    printf("\n");
 
     // Clean up
     close_and_unmap_disk(disk_memory, disk_size);

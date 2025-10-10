@@ -25,20 +25,26 @@ typedef struct{
     uint32_t free_list_head;    // index of the first free block
 } DiskInfo;
 
-// API
-
+// Error handling function
 void handle_error(const char* msg);
 
+// Print disk information: name, size, block size, free blocks, free list head
 void print_disk_info(const DiskInfo* info);
 
+// Print disk status: metainfo and first 10 FAT entries
 void print_disk_status(char* disk_mem, size_t disk_size_bytes);
 
+//Initialize disk
 char* open_and_map_disk(const char* filename, size_t filesize);
 
+//Compute number of reserved blocks (metainfo + FAT)
 uint32_t calc_reserved_blocks(size_t disk_size, size_t block_size);
 
+// Read a block from disk into buffer
 int read_block(char* disk_mem, uint32_t block_index, void *buffer, size_t block_size, size_t disk_size_bytes);
 
+// Write a block from buffer to disk
 int write_block(char* disk_mem, uint32_t block_index, const void *buffer, size_t block_size, size_t disk_size_bytes);
 
+// Unmap and close the disk
 void close_and_unmap_disk(char* file_memory, size_t filesize);

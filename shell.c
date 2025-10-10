@@ -59,14 +59,15 @@ void shell_init() {
         //help command
         if (strcmp(comm, "help") == 0) {
             printf("Available commands:\n");
-            printf(" - format <fs_filename> <size>\n");
-            printf(" - mkdir <dir_name>\n");
-            printf(" - cd <dir_name>\n");
-            printf(" - touch <file_name>\n");
-            printf(" - cat <file_name>\n");
-            printf(" - ls\n");
-            printf(" - append <file> <text>\n");
-            printf(" - rm <dir/file>\n");
+            printf(" - format <fs_filename> <size>: create or open disk\n");
+            printf(" - mkdir <dir_name>: create new directory\n");
+            printf(" - cd <dir_name>: change directory\n");
+            printf(" - touch <file_name>: create new file\n");
+            printf(" - cat <file_name>: display file contents\n");
+            printf(" - ls: list directory contents\n");
+            printf(" - append <file_name> <text>: append text to file\n");
+            printf(" - rm <file_name>: remove file\n");
+            printf(" - rmdir <dir_name>: remove directory\n");
             printf(" - close\n");
             continue;
         }
@@ -136,7 +137,9 @@ void shell_init() {
                 continue;
             }
             char* dir_name = tokens[1];
-            printf("Creating directory: %s\n", dir_name);
+            
+            //printf("Creating directory: %s\n", dir_name);
+            
             //cursor is the block of the current directory, already set in cd or at startup
             //we create the new directory inside the current directory
             create_directory(disk_memory, dir_name, cursor, disk_size);
@@ -145,8 +148,12 @@ void shell_init() {
             //we can print the updated current directory
             Entry* current_dir = read_directory_from_block(disk_memory, cursor, BLOCK_SIZE, disk_size);
             if (current_dir == NULL) handle_error("Failed to read current directory");
+            
+            /*
             printf("Updated current directory:\n");
             print_directory(current_dir);
+            */
+            
             free(current_dir);
             continue;
         }
@@ -220,8 +227,8 @@ void shell_init() {
             }
             char* file_name = tokens[1];
             printf("Creating empty file...\n");
+            create_file(disk_memory, file_name, cursor, disk_size);
             printf("Created empty file: %s\n", file_name);
-            // TODO: Implement file creation
             continue;
         }
 
@@ -255,7 +262,8 @@ void shell_init() {
             }
             char* file_name = tokens[1];
             printf("Removing file: %s\n", file_name);
-            // TODO: Implement remove logic
+            remove_file(disk_memory, file_name, cursor, disk_size);
+            printf("File removed: %s\n", file_name);
             continue;
         }
         

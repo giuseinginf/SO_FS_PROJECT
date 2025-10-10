@@ -23,6 +23,7 @@ void print_disk_info(const DiskInfo* info) {
 // Print disk status: metainfo and first 10 FAT entries
 void print_disk_status(char* disk_mem, size_t disk_size_bytes){
     //we read metainfo
+    printf("Disk status:\n");
     DiskInfo info = {0};
     int res = read_metainfo(disk_mem, &info, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to read metainfo");
@@ -97,7 +98,7 @@ int read_block(char* disk_mem, uint32_t block_index, void *buffer, size_t block_
         return -1; // Error: out of bounds
     }
     memcpy(buffer, (char*)disk_mem + offset, block_size);
-    return 0; // Success
+    return 0;
 }
 
 //write block from buffer to the disk
@@ -107,7 +108,8 @@ int write_block(char* disk_mem, uint32_t block_index, const void *buffer, size_t
         return -1; // Error: out of bounds
     }
     memcpy((char*)disk_mem + offset, buffer, block_size);
-    msync((char*)disk_mem + offset, block_size, MS_SYNC); // Ensure persistence
+    // Ensure persistence
+    msync((char*)disk_mem + offset, block_size, MS_SYNC);
     return 0;
 }
 

@@ -1,10 +1,10 @@
 #include "entry.h"
 
 // Initialize an Entry structure
-void init_entry(Entry* dir, const char* name, uint32_t start_block, uint8_t type){
+void init_directory(Entry* dir, const char* name, uint32_t start_block){
     strncpy(dir->name, name, MAX_NAME_LEN);
-    dir->type = type;
-    dir->size = 1; // Initially empty
+    dir->type = ENTRY_TYPE_DIR;
+    dir->size = 0; // Initially empty
     memset(dir->dir_blocks, 0, sizeof(dir->dir_blocks));
     dir->parent_block = FAT_EOF; // No parent initially
     dir->current_block = start_block;
@@ -45,10 +45,8 @@ Entry* read_directory_from_block(void *disk_mem, uint32_t block_index, size_t bl
     char buffer[block_size];
     int res = read_block(disk_mem, block_index, buffer, block_size, disk_size_bytes);
     if (res != 0) return NULL;
-    Entry* dir = (Entry*)malloc(sizeof(Entry));
-    if (dir == NULL) {
-        return NULL; // Memory allocation failed
-    }
+    Entry* dir = malloc(sizeof(Entry));
+    if (dir == NULL) return NULL;
     memcpy(dir, buffer, sizeof(Entry));
     return dir;
 }
@@ -57,7 +55,7 @@ Entry* read_directory_from_block(void *disk_mem, uint32_t block_index, size_t bl
 void print_directory(const Entry* dir){
     printf("Directory: %s\n", dir->name);
     printf("Type: %s\n", dir->type == ENTRY_TYPE_DIR ? "Directory" : "File");
-    printf("Size: %u bytes\n", dir->size * BLOCK_SIZE);
+    printf("Size: %u\n", dir->size);
     printf("Parent Block: %s\n", dir->parent_block == FAT_EOF ? "None" : "");
     printf("Current Block: %u\n", dir->current_block);
 
@@ -70,10 +68,11 @@ void print_directory(const Entry* dir){
                 has_child = 1;
             }
         }
-        if (!has_child) {
-            printf("No directory blocks.");
+        if (has_child) {
+            printf("/\n");
+        } else {
+            printf("No directory blocks.\n");
         }
-        printf("/\n");
     }
 }
 
@@ -92,6 +91,7 @@ void update_directory_children(Entry* dir, uint32_t child_start_block){
     printf("Directory is full, cannot add more children.\n");
 }
 
+// Get the array of children blocks from a directory
 uint32_t* get_children_blocks(const Entry* dir) {
     return (uint32_t*)dir->dir_blocks;
 }
@@ -106,7 +106,7 @@ void get_current_path(char* disk_mem, uint32_t cursor, size_t block_size, size_t
     uint32_t block = cursor;
     while (block != FAT_EOF) {
         Entry* dir = read_directory_from_block(disk_mem, block, block_size, disk_size_bytes);
-        if (!dir) break;
+        if (dir == NULL) break;
         size_t name_len = strlen(dir->name);
         if (strcmp(dir->name, "/") != 0 && name_len > 0) {
             pos -= name_len;
@@ -129,3 +129,14 @@ void get_current_path(char* disk_mem, uint32_t cursor, size_t block_size, size_t
         out_path[max_len - 1] = '\0';
     }
 }
+
+//Initialize a file
+void init_file(Entry* file, const char* name, uint32_t start_block){
+    strncpy(file->name, name, MAX_NAME_LEN);
+    file->type = ENTRY_TYPE_FILE;
+    file->size = 0; // Initially empty
+    memset(file->dir_blocks, 0, sizeof(file->dir_blocks));
+    file->parent_block = FAT_EOF; // No parent initially
+    file->current_block = start_block;
+}
+

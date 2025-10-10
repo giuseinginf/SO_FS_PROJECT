@@ -1,22 +1,25 @@
 #include "fat.h"
 
+//write metainfo to disk
 int write_metainfo(char* disk_mem, const DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
     char buffer[block_size];
     memset(buffer, 0, block_size);
     memcpy(buffer, info, sizeof(DiskInfo));
-    return write_block(disk_mem, 0, buffer, block_size, disk_size_bytes);
+    uint32_t index = 0; // metainfo is always at block 0
+    return write_block(disk_mem, index, buffer, block_size, disk_size_bytes);
 }
 
+//read metainfo from disk
 int read_metainfo(char* disk_mem, DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
     char buffer[block_size];
-    int res = read_block(disk_mem, 0, buffer, block_size, disk_size_bytes);
+    uint32_t index = 0; // metainfo is always at block 0
+    int res = read_block(disk_mem, index, buffer, block_size, disk_size_bytes);
     if (res != 0) return res;
     memcpy(info, buffer, sizeof(DiskInfo));
     return 0;
 }
 
-// --- FAT ---
-
+//initialize FAT struct
 void init_fat(uint32_t* fat, uint32_t num_entries) {
     for (uint32_t i = 0; i < num_entries; i++) {
         //we put EOF at the end of the FAT
@@ -28,6 +31,7 @@ void init_fat(uint32_t* fat, uint32_t num_entries) {
     }
 }
 
+// Print FAT entries
 void print_fat(const uint32_t* fat, uint32_t num_entries) {
     for (uint32_t i = 0; i < num_entries; i++) {
         //if we read EOF, we print EOF instead of the number
@@ -43,7 +47,8 @@ void print_fat(const uint32_t* fat, uint32_t num_entries) {
     }
 }
 
-void load_info_and_fat(char* disk_mem, DiskInfo* info, uint32_t* fat, size_t disk_size) {
+// Load metainfo and FAT from disk into RAM
+void read_info_and_fat(char* disk_mem, DiskInfo* info, uint32_t* fat, size_t disk_size) {
     //read metainfo
     //printf("Loading metainfo...\n");
     int res = read_metainfo(disk_mem, info, BLOCK_SIZE, disk_size);
@@ -52,18 +57,21 @@ void load_info_and_fat(char* disk_mem, DiskInfo* info, uint32_t* fat, size_t dis
     //read fat
     //printf("Loading FAT...\n");
     uint32_t num_fat_entries = disk_size / BLOCK_SIZE;
-    res = read_fat(disk_mem, fat, num_fat_entries, 1, BLOCK_SIZE, disk_size);
+    uint32_t fat_index = 1; // FAT starts at block 1
+    res = read_fat(disk_mem, fat, num_fat_entries, fat_index, BLOCK_SIZE, disk_size);
     if (res != 0) handle_error("Failed to read FAT");
     //printf("FAT read successfully.\n");
     //print_fat(fat, 10);
 }
 
-int update_fat_and_metainfo(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t fat_start_block, DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
+// Update FAT and metainfo on disk
+int write_info_and_fat(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t fat_start_block, DiskInfo *info, size_t block_size, size_t disk_size_bytes) {
     int res = write_fat(disk_mem, fat, num_fat_entries, fat_start_block, block_size, disk_size_bytes);
     if (res != 0) return res;
     return write_metainfo(disk_mem, info, block_size, disk_size_bytes);
 }
 
+// Write FAT to disk
 int write_fat(char* disk_mem, const uint32_t *fat, uint32_t num_fat_entries, uint32_t start_block, size_t block_size, size_t disk_size_bytes) {
 
     uint32_t fat_bytes = num_fat_entries * sizeof(uint32_t);
@@ -83,6 +91,7 @@ int write_fat(char* disk_mem, const uint32_t *fat, uint32_t num_fat_entries, uin
     return 0;
 }
 
+// Read FAT from disk
 int read_fat(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t start_block, size_t block_size, size_t disk_size_bytes) {
     uint32_t fat_bytes = num_fat_entries * sizeof(uint32_t);
     uint32_t fat_blocks = (fat_bytes + block_size - 1) / block_size;
@@ -100,12 +109,14 @@ int read_fat(char* disk_mem, uint32_t *fat, uint32_t num_fat_entries, uint32_t s
     return 0;
 }
 
-uint32_t get_free_block(const DiskInfo* info) {
+// Get the index of the first free block from metainfo
+uint32_t get_list_head(const DiskInfo* info) {
     return info->free_list_head;
 }
 
-uint32_t allocateBlock(uint32_t* fat, DiskInfo* info) {
-    uint32_t freeListHead = info->free_list_head;
+// Allocate a block from the free list and update metainfo and FAT
+uint32_t allocate_block(uint32_t* fat, DiskInfo* info) {
+    uint32_t freeListHead = get_list_head(info);
     uint32_t free_blocks = info->free_blocks;
     if (free_blocks == 0) return FAT_EOF; // No free blocks available
     uint32_t allocatedBlock = freeListHead;
@@ -116,9 +127,10 @@ uint32_t allocateBlock(uint32_t* fat, DiskInfo* info) {
     return allocatedBlock;
 }
 
-uint32_t appendBlockToChain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
+// Append a new block to the end of a file's block chain
+uint32_t append_block_to_chain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
     // 1. Allocate a new block from the free list
-    uint32_t freeListHead = info->free_list_head;
+    uint32_t freeListHead = get_list_head(info);
     if (freeListHead == FAT_EOF) return FAT_EOF; // No free blocks available
     uint32_t newBlock = freeListHead;
     freeListHead = fat[newBlock];
@@ -133,9 +145,10 @@ uint32_t appendBlockToChain(uint32_t* fat, DiskInfo* info, uint32_t chainHead) {
     return newBlock;
 }
 
-int deallocateChain(uint32_t* fat, DiskInfo* info, uint32_t start) {
+// Deallocate a chain of blocks starting from 'start'
+int deallocate_chain(uint32_t* fat, DiskInfo* info, uint32_t start) {
     uint32_t block = start;
-    uint32_t freeListHead = info->free_list_head;
+    uint32_t freeListHead = get_list_head(info);
     while (block != FAT_EOC) {
         uint32_t next = fat[block];
         fat[block] = freeListHead;   // Concatenate to free list
