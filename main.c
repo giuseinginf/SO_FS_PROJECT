@@ -5,92 +5,75 @@
 #include "shell_commands.h"
 
 void test_function() {
-    //init disk
+    // Init disk
     const char* disk_path = "disk.img";
+    size_t disk_size = 16 * 1024 * 1024; // 16 MB
 
-    //size_t disk_size = 32 * 1024 * 1024; // 32 MB
-    size_t disk_size = 16 * 1024 * 1024; // 64 MB
-
-    //format disk
+    // Format disk
     char* disk_memory = format_disk(disk_path, disk_size);
-    if(disk_memory == NULL) handle_error("Failed to initialize disk");
-    
-    printf("Disk initialized successfully.\n");
-    
-    //read disk status
-    printf("\n");
+    if (disk_memory == NULL) handle_error("Failed to initialize disk");
+
+    printf("Disk initialized successfully.\n\n");
     print_disk_status(disk_memory, disk_size);
     printf("\n");
 
-    //we know root is after metainfo and fat reserved blocks
+    // Set root block and cursor
     uint32_t reserved_blocks = calc_reserved_blocks(disk_size, BLOCK_SIZE);
-    uint32_t root_block = reserved_blocks; // Assuming root is the first block after reserved
-    //uint32_t cursor = root_block;
-    //read root directory
+    uint32_t root_block = reserved_blocks;
     Entry* read_root = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
-    //we check if root directory is valid
     if (read_root == NULL) handle_error("Failed to read root directory");
-
-    //printf("Root directory read successfully.\n");
     printf("Root directory:\n");
     print_directory(read_root);
     free(read_root);
 
     uint32_t cursor = root_block;
-    printf("Cursor at root block: %u\n", cursor);
-    printf("\n");
+    printf("Cursor at root block: %u\n\n", cursor);
 
-    //we add a new file inside root
+    // Create file
     create_file(disk_memory, "file1.txt", cursor, disk_size);
     printf("\n");
 
-    //we add a new directory inside root
-    create_directory(disk_memory, "dir1", cursor, disk_size);
-    printf("\n");
-
-    //we list the contents of root
-    printf("Contents of root directory after adding file1.txt:\n");
+    // List directory contents
+    printf("Contents of root directory after creating file1.txt:\n");
     list_directory_contents(disk_memory, cursor, disk_size);
     printf("\n");
 
-    //we print the updated root directory
-    Entry* updated_root = read_directory_from_block(disk_memory, root_block, BLOCK_SIZE, disk_size);
-    if (updated_root == NULL) handle_error("Failed to read updated root directory");
-    printf("Updated root directory after adding file1.txt:\n");
-    print_directory(updated_root);
-    free(updated_root);
+    //append to file
+    char* data = "Hello, this is some appended data to file1.txt!";
+    size_t data_len = strlen(data);
+    append_to_file(disk_memory, data, data_len, "file1.txt", cursor, BLOCK_SIZE, disk_size);
     printf("\n");
 
-    //we print free list head
+    //read file with cat command
+    printf("Contents of file1.txt after appending data:\n");
+    cat_file(disk_memory, "file1.txt", cursor, BLOCK_SIZE, disk_size);
+    printf("\n");
+
+    /*
+    
+    //add a new directory
+    create_directory(disk_memory, "dir1", cursor, disk_size);
+    printf("\n");
+    
+    // List directory contents
+    printf("Contents of root directory after creating dir1:\n");
+    list_directory_contents(disk_memory, cursor, disk_size);
+    printf("\n");
+    */
+
+    //print fat
     DiskInfo info;
     uint32_t num_fat_entries = disk_size / BLOCK_SIZE;
     uint32_t fat[num_fat_entries];
     read_info_and_fat(disk_memory, &info, fat, disk_size);
-    print_disk_info(&info);
-    printf("\n");
-
-    //now we remove the directory we just created
-    remove_directory(disk_memory, "dir1", cursor, disk_size);
-    printf("\n");
-
-    //we list the contents of root again
-    printf("Contents of root directory after removing dir1:\n");
-    list_directory_contents(disk_memory, cursor, disk_size);
-    printf("\n");
-
-    //now we remove the file we created
-    remove_file(disk_memory, "file1.txt", cursor, disk_size);
-    printf("\n");
-
-    //we list the contents of root again
-    printf("Contents of root directory after removing file1.txt:\n");
-    list_directory_contents(disk_memory, cursor, disk_size);
+    printf("FAT entries after operations:\n");
+    print_fat(fat, 10);
     printf("\n");
 
     // Clean up
     close_and_unmap_disk(disk_memory, disk_size);
-
 }
+
 int main() {
     //test_function();
     shell_init();

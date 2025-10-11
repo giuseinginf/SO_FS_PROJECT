@@ -272,7 +272,7 @@ void list_directory_contents(char* disk_mem, uint32_t cursor, size_t disk_size_b
 
         Entry* child = read_directory_from_block(disk_mem, children_blocks[i], BLOCK_SIZE, disk_size_bytes);
         if (child == NULL) handle_error("Failed to read child entry");
-        printf("- Name: %s - Type: %s - Size: %u bytes\n", child->name, child->type == ENTRY_TYPE_DIR ? "Directory" : "File", child->size*BLOCK_SIZE);
+        printf("- Name: %s - Type: %s - Size: %u\n", child->name, child->type == ENTRY_TYPE_DIR ? "Directory" : "File", child->size);
         free(child);
         has_children = 1;
     }
@@ -393,7 +393,6 @@ void create_file(char* disk_mem, const char* name, uint32_t parent_block, size_t
 
 //rm
 void remove_file(char* disk_mem, const char *name, uint32_t parent_block, size_t disk_size_bytes){
-    
     //load_info_and_fat
     DiskInfo info;
     uint32_t num_fat_entries = disk_size_bytes / BLOCK_SIZE;
@@ -438,5 +437,141 @@ void remove_file(char* disk_mem, const char *name, uint32_t parent_block, size_t
     if (res != 0) handle_error("Failed to update FAT and metainfo after removing file");
     //clean up
     free(parent_dir);
+    free(file_entry);
+}
+
+//append
+void append_to_file(char* disk_mem, char* data, size_t data_len, char* filename, uint32_t cursor, size_t block_size, size_t disk_size_bytes){
+    //load_info_and_fat
+    DiskInfo info;
+    uint32_t num_fat_entries = disk_size_bytes / block_size;
+    uint32_t fat[num_fat_entries];
+    read_info_and_fat(disk_mem, &info, fat, disk_size_bytes);
+    //find file entry in current directory
+    Entry* file_entry = NULL;
+    Entry* current_dir = read_directory_from_block(disk_mem, cursor, block_size, disk_size_bytes);
+    if (current_dir == NULL) handle_error("Failed to read current directory");
+    uint32_t* children_blocks = get_children_blocks(current_dir);
+    if (children_blocks == NULL) handle_error("Failed to get children blocks of parent directory");
+    for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
+        if (children_blocks[i] == 0) continue;
+        Entry* child = read_directory_from_block(disk_mem, children_blocks[i], block_size, disk_size_bytes);
+        if (child == NULL) handle_error("Failed to read child directory");
+        if (strcmp(child->name, filename) == 0 && child->type == ENTRY_TYPE_FILE) {
+            file_entry = child;
+            break;
+        }
+        free(child);
+    }
+    free(current_dir);
+    if (file_entry == NULL) {
+        printf("File to append to not found in current directory\n");
+        return;
+    }
+    uint32_t first_block = file_entry->current_block;
+    // Find the last data block (if it doesn't exist, allocate a new one)
+    uint32_t last_data_block = fat[first_block];
+    if (last_data_block == FAT_EOC) {
+        // No data block, allocate one and link it
+        last_data_block = allocate_block(fat, &info);
+        if (last_data_block == FAT_EOF) handle_error("Failed to allocate first data block");
+        fat[first_block] = last_data_block;
+        fat[last_data_block] = FAT_EOC;
+    }
+    // Scroll through the chain to the last block
+    uint32_t cur_block = last_data_block;
+    while (fat[cur_block] != FAT_EOC) {
+        cur_block = fat[cur_block];
+    }
+    last_data_block = cur_block;
+    // Calculate write offset in the last block
+    size_t offset = file_entry->size % block_size;
+    size_t bytes_left = data_len;
+    size_t data_written = 0;
+    while (bytes_left > 0) {
+        char buffer[block_size];
+        // If offset > 0, read the current block to avoid overwriting existing data
+        if (offset > 0) {
+            int res = read_block(disk_mem, last_data_block, buffer, block_size, disk_size_bytes);
+            if (res != 0) handle_error("Failed to read last data block for append");
+        } else {
+            memset(buffer, 0, block_size);
+        }
+        // write how many bytes fit in the current block
+        size_t space = block_size - offset;
+        size_t to_write = (bytes_left < space) ? bytes_left : space;
+        memcpy(buffer + offset, data + data_written, to_write);
+        int res = write_block(disk_mem, last_data_block, buffer, block_size, disk_size_bytes);
+        if (res != 0) handle_error("Failed to write appended block to disk");
+        // Update counters
+        bytes_left -= to_write;
+        data_written += to_write;
+        file_entry->size += to_write;
+        offset = 0;
+        // If there is remaining data, allocate a new block and continue the chain
+        if (bytes_left > 0) {
+            uint32_t new_block = allocate_block(fat, &info);
+            if (new_block == FAT_EOF) handle_error("Failed to allocate additional data block");
+            fat[last_data_block] = new_block;
+            fat[new_block] = FAT_EOC;
+            last_data_block = new_block;
+        }
+    }
+    // Update entry and fat
+    int res = write_entry(disk_mem, file_entry, block_size, disk_size_bytes);
+    if (res != 0) handle_error("Failed to write updated file entry to disk");
+    res = write_info_and_fat(disk_mem, fat, num_fat_entries, 1, &info, block_size, disk_size_bytes);
+    if (res != 0) handle_error("Failed to update FAT and metainfo after appending to file");
+    free(file_entry);
+}
+
+//cat
+void cat_file(char* disk_mem, const char* filename, uint32_t cursor, size_t block_size, size_t disk_size_bytes){
+    // Load metainfo+FAT in RAM
+    DiskInfo info;
+    uint32_t num_fat_entries = disk_size_bytes / block_size;
+    uint32_t fat[num_fat_entries];
+    read_info_and_fat(disk_mem, &info, fat, disk_size_bytes);
+    // Find the Entry of the file in the current directory
+    Entry* file_entry = NULL;
+    Entry* current_dir = read_directory_from_block(disk_mem, cursor, block_size, disk_size_bytes);
+    if (current_dir == NULL) handle_error("Failed to read current directory");
+    uint32_t* children_blocks = get_children_blocks(current_dir);
+    if (children_blocks == NULL) handle_error("Failed to get children blocks of parent directory");
+    for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
+        if (children_blocks[i] == 0) continue;
+        Entry* child = read_directory_from_block(disk_mem, children_blocks[i], block_size, disk_size_bytes);
+        if (child == NULL) handle_error("Failed to read child directory");
+        if (strcmp(child->name, filename) == 0 && child->type == ENTRY_TYPE_FILE) {
+            file_entry = child;
+            break;
+        }
+        free(child);
+    }
+    free(current_dir);
+    if (file_entry == NULL) {
+        printf("File to read not found in current directory\n");
+        return;
+    }
+    // Get first data block
+    uint32_t data_block = fat[file_entry->current_block];
+    if (data_block == FAT_EOC) {
+        // File is empty
+        free(file_entry);
+        return;
+    }
+    // Print all file content block by block
+    size_t bytes_left = file_entry->size;
+    while (data_block != FAT_EOC && bytes_left > 0) {
+        char buffer[block_size];
+        memset(buffer, 0, block_size);
+        int res = read_block(disk_mem, data_block, buffer, block_size, disk_size_bytes);
+        if (res != 0) handle_error("Failed to read data block");
+        size_t to_print = (bytes_left < block_size) ? bytes_left : block_size;
+        fwrite(buffer, 1, to_print, stdout);
+        bytes_left -= to_print;
+        data_block = fat[data_block];
+    }
+    printf("\n");
     free(file_entry);
 }

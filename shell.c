@@ -153,7 +153,7 @@ void shell_init() {
             printf("Updated current directory:\n");
             print_directory(current_dir);
             */
-            
+
             free(current_dir);
             continue;
         }
@@ -197,9 +197,13 @@ void shell_init() {
             //we can print the updated current directory
             Entry* current_dir = read_directory_from_block(disk_memory, cursor, BLOCK_SIZE, disk_size);
             if (current_dir == NULL) handle_error("Failed to read current directory");
+            
+            /*
             printf("Updated current directory:\n");
             print_directory(current_dir);
             free(current_dir);
+            */
+            
             continue;
         }
         
@@ -232,23 +236,45 @@ void shell_init() {
             continue;
         }
 
-        //append command
         else if (strcmp(comm, "append") == 0) {
             if (!DISK_IS_MOUNTED) {
                 printf("Error: no disk mounted. Please format a disk first.\n");
                 continue;
             }
-            if (tokens[1] == NULL || tokens[2] == NULL) {
-                printf("Error: missing arguments\n");
+            if (tokens[1] == NULL) {
+                printf("Error: missing file name\n");
                 continue;
             }
             char* file_name = tokens[1];
-            char* text = tokens[2];
+
+            char text[4096];
+            if (tokens[2] == NULL) {
+                // Chiedi all'utente il testo da appendere
+                printf("Enter text to append (end with newline):\n");
+                if (!fgets(text, sizeof(text), stdin)) {
+                    printf("Error reading text\n");
+                    continue;
+                }
+                // Rimuovi newline finale
+                text[strcspn(text, "\n")] = 0;
+            } else {
+                // Se presente, prendi tutto ciò che c'è dopo il nome file come testo
+                char* text_start = strstr(command, file_name);
+                if (text_start) {
+                    text_start += strlen(file_name);
+                    while (*text_start == ' ' || *text_start == '\t') text_start++;
+                }
+                strncpy(text, text_start, sizeof(text)-1);
+                text[sizeof(text)-1] = 0;
+            }
+
             printf("Appending to file: %s\n", file_name);
             printf("Text to append: %s\n", text);
-            // TODO: Implement append logic
+
+            append_to_file(disk_memory, text, strlen(text), file_name, cursor, BLOCK_SIZE, disk_size);
             continue;
         }
+
 
         //rm command
         else if (strcmp(comm, "rm") == 0) {
@@ -280,7 +306,8 @@ void shell_init() {
             }
             char* file_name = tokens[1];
             printf("Displaying content of file: %s\n", file_name);
-            // TODO: Implement cat logic
+            cat_file(disk_memory, file_name, cursor, BLOCK_SIZE, disk_size);
+            printf("\nEnd of file: %s\n", file_name);
             continue;
         }
 
