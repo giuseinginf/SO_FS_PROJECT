@@ -2,7 +2,7 @@ This is a simple Shell + File System implementation project.
 
 The project is entirely written in C language and it's part of the Operating Systems Course for Software Engineering Bachelor Degree at Sapienza University of Rome. The course is taught by professor Giorgio Grisetti.
 
-The file system is written on a large file ("disk"), which is opened, truncated and mapped into memory. The disk is accessed in blocks.
+The file system is written on a large file ("disk"), which is opened, truncated and mapped into memory. The disk is accessed in blocks. On startup, the user is asked the size (16 MB, 32 MB or 64 MB). Each disk block is 4 kb. The disk is mapped into memory throuhg the "mmap" function. It returns a pointer which allows the user to access the disk the same way arrays are accessed.
 
 Each file block index is stored in a File Allocation Table (FAT), which acts as a linked list for the blocks that make up a file. The FAT is basically an array list that keeps track of which blocks are free, which are in use, and the chain of blocks for each file.
 

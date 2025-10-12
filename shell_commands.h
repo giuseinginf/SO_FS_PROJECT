@@ -1,6 +1,9 @@
+#pragma once
+
 #include "fat.h"
 #include "disk.h"
 #include "entry.h"
+#include "utils.h"
 
 //format
 char* format_disk(const char *filename, size_t size);
