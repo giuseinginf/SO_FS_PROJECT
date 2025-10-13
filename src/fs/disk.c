@@ -1,8 +1,6 @@
 #include "disk.h"
 #include "fat.h"
 
-#define ENTRIES_TO_PRINT 10
-
 // print disk information
 void print_disk_info(const DiskInfo* info) {
     printf("Name: %s\n", info->name);

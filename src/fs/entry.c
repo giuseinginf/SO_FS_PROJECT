@@ -68,7 +68,7 @@ void print_directory(const Entry* dir){
             }
         }
         if (has_child) {
-            printf("/\n");
+            printf("-\n");
         } else {
             printf("No directory blocks.\n");
         }

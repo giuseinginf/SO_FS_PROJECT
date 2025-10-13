@@ -2,7 +2,7 @@
 
 #include "disk.h"
 #include "fat.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define ENTRY_TYPE_FILE 0
 #define ENTRY_TYPE_DIR  1

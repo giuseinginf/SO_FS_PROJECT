@@ -1,9 +1,9 @@
 #pragma once
 
-#include "fat.h"
-#include "disk.h"
-#include "entry.h"
-#include "utils.h"
+#include "../fs/fat.h"
+#include "../fs/disk.h"
+#include "../fs/entry.h"
+#include "../utils/utils.h"
 
 //format
 char* format_disk(const char *filename, size_t size);

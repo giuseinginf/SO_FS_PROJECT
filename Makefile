@@ -1,15 +1,18 @@
-CC=gcc
-CFLAGS=-Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
-SRCS=main.c disk.c shell.c fat.c entry.c shell_commands.c utils.c
-OBJ=$(SRCS:.c=.o)
+CC = gcc
+SRC_DIR = src
+BIN_DIR = bin
+OBJS = $(SRC_DIR)/main.c \
+       $(SRC_DIR)/shell/shell.c \
+       $(SRC_DIR)/shell/shell_commands.c \
+       $(SRC_DIR)/fs/disk.c \
+       $(SRC_DIR)/fs/fat.c \
+       $(SRC_DIR)/fs/entry.c \
+       $(SRC_DIR)/utils/utils.c
+CFLAGS = -Wall -Wextra -g
 
-all: myFS
-
-myFS: $(OBJ)
-	$(CC) -o $@ $^
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $<
+$(BIN_DIR)/fs-shell: $(OBJS)
+	mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) $(OBJS) -o $(BIN_DIR)/fs-shell
 
 clean:
-	rm -f myFS $(OBJ)
+	rm -rf $(BIN_DIR)

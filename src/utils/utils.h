@@ -12,6 +12,7 @@
 #include <stddef.h>
 
 #define DEBUG 0
+#define ENTRIES_TO_PRINT 10
 
 //error handling function
 void handle_error(const char* msg);

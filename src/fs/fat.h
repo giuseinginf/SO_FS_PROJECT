@@ -1,7 +1,7 @@
 #pragma once
 
 #include "disk.h"
-#include "utils.h"
+#include "../utils/utils.h"
 
 #define FAT_EOC 0xFFFFFFFF  //marks last block of a file
 #define FAT_EOF 0xFFFFFFFE  //marks end of FAT itself

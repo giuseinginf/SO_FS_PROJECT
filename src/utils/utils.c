@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../utils/utils.h"
 
 // error handling function
 void handle_error(const char* msg) {

@@ -91,7 +91,7 @@ void create_directory(char* disk_mem, const char *name, uint32_t parent_block, s
     if (DEBUG) {
         printf("In create_directory:\n");
         print_disk_info(&info);
-        print_fat(fat, 10);
+        print_fat(fat, ENTRIES_TO_PRINT);
     }
     //check if there's space for a new directory
     if (info.free_blocks == 0) handle_error("No free blocks available to create new directory");
@@ -148,7 +148,7 @@ void create_directory(char* disk_mem, const char *name, uint32_t parent_block, s
     if (DEBUG) {
         //print updated disk info and fat
         print_disk_info(&info);
-        print_fat(fat, 10);
+        print_fat(fat, ENTRIES_TO_PRINT);
     }
     //clean up
     free(parent_dir);
@@ -197,11 +197,15 @@ void remove_directory(char* disk_mem, const char *name, uint32_t parent_block, s
     if (res != 0) handle_error("Failed to deallocate directory block");
     //remove directory from parent by zeroing its entry
     parent_dir->dir_blocks[dir_index] = 0;
-    parent_dir->size--;
+    if(parent_dir->size > 0) parent_dir->size--;
     //write updated parent directory to disk
     res = write_entry(disk_mem, parent_dir, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to write updated parent directory to disk");
     //update fat and metainfo on disk
+    if(DEBUG){
+        //print updated fat
+        print_fat(fat, ENTRIES_TO_PRINT);
+    }
     res = write_info_and_fat(disk_mem, fat, num_fat_entries, 1, &info, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to update FAT and metainfo after removing directory");
     //clean up
@@ -330,6 +334,10 @@ void create_file(char* disk_mem, const char* name, uint32_t parent_block, size_t
     //write updated parent directory to disk
     write_entry(disk_mem, parent_dir, BLOCK_SIZE, disk_size_bytes);
     //update fat and metainfo on disk
+    if (DEBUG) {
+        printf("Updated FAT:\n");
+        print_fat(fat, ENTRIES_TO_PRINT);
+    }
     int res = write_info_and_fat(disk_mem, fat, num_fat_entries, 1, &info, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to update FAT and metainfo after creating new file");
     if (DEBUG) printf("FAT and metainfo updated successfully after creating new file.\n");
@@ -380,6 +388,10 @@ void remove_file(char* disk_mem, const char *name, uint32_t parent_block, size_t
     res = write_entry(disk_mem, parent_dir, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to write updated parent directory to disk");
     //update_fat_and_metainfo
+    if (DEBUG) {
+        printf("Updated FAT:\n");
+        print_fat(fat, ENTRIES_TO_PRINT);
+    }
     res = write_info_and_fat(disk_mem, fat, num_fat_entries, 1, &info, BLOCK_SIZE, disk_size_bytes);
     if (res != 0) handle_error("Failed to update FAT and metainfo after removing file");
     //clean up
